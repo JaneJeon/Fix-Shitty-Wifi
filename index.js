@@ -17,13 +17,12 @@ const DEVICE = `$(networksetup -listallhardwareports | awk '$3=="Wi-Fi" {getline
   info = debug('wifi:!'),
   error = debug('wifi:✗'),
   ok = debug('wifi:✓'),
-  now = () => new Date().toLocaleString(),
+  now = () => new Date().toLocaleString() + '\t',
   sleep = interval => setTimeout(check, interval * 1000),
   exponentiate = interval =>
     Math.min(interval * process.env.GROWTH_RATE, process.env.MAX_INTERVAL),
   restart = msg => {
-    execSync(`${WIFI} off`)
-    execSync(`${WIFI} on`)
+    execSync(`${WIFI} off; ${WIFI} on`)
     info(msg)
     sleep((errorInterval = exponentiate(errorInterval)))
   },
@@ -36,9 +35,9 @@ const DEVICE = `$(networksetup -listallhardwareports | awk '$3=="Wi-Fi" {getline
         // fail too many times -> spoof MAC
         if (++failed == process.env.FAIL_LIMIT)
           exec(SPOOF_MAC, { name: 'Fix Shitty Wifi' }, () =>
-            restart('MAC address spoofed')
+            restart('MAC address spoofed\t')
           )
-        else restart('wifi restarted')
+        else restart('restarted network card\t')
       } else {
         ok(now())
         errorInterval = actualMin
@@ -47,5 +46,5 @@ const DEVICE = `$(networksetup -listallhardwareports | awk '$3=="Wi-Fi" {getline
       }
     })
 
-info(`looking up ${process.env.TEST_WEBSITE}`)
+info(`looking up ${process.env.TEST_WEBSITE}\t`)
 check()

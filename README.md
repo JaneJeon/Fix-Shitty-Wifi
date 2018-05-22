@@ -8,8 +8,12 @@ Fixes various troublesome wifi connections that show any of the following behavi
 `node index.js` to start, `.env` for configuration.
 
 <p align='center'>
-  <img src='screenshot.png' width='70%'>
+  <img src='screenshot1.png' width='70%'>
 </p>
 
 ### A word about administrator access
-To fix troublesome behaviour #3, the program needs to spoof the computer's `MAC address`. To do that, it needs `sudo` access. Thus, it will ask you for your password (a popup will show up) every time it is necessary to bypass that behaviour (most airports force you to reconnect after 30-45 minutes).
+To fix troublesome behaviour #3, the program needs to spoof the computer's `MAC address`. To do that, it needs `sudo` access. Thus, it will ask you for your password (popup shown below) every time it is necessary to bypass that behaviour (most airports force you to reconnect after 30-45 minutes).
+
+<p align='center'>
+	<img src='screenshot2.png' width='50%'>
+</p>
