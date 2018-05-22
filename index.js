@@ -1,7 +1,9 @@
 require('dotenv').load()
+const actualMin = process.env.MIN_INTERVAL / process.env.GROWTH_RATE
 
 let failed = 0,
-  interval = process.env.MIN_INTERVAL / process.env.GROWTH_RATE
+  errorInterval = actualMin,
+  okInterval = actualMin
 const DEVICE = `$(networksetup -listallhardwareports | awk '$3=="Wi-Fi" {getline; print $2}')`,
   WIFI = `networksetup -setairportpower ${DEVICE}`,
   SPOOF_MAC =
@@ -16,18 +18,20 @@ const DEVICE = `$(networksetup -listallhardwareports | awk '$3=="Wi-Fi" {getline
   error = debug('wifi:✗'),
   ok = debug('wifi:✓'),
   now = () => new Date().toLocaleString(),
-  sleep = () => setTimeout(check, interval * 1000),
+  sleep = interval => setTimeout(check, interval * 1000),
+  exponentiate = interval =>
+    Math.min(interval * process.env.GROWTH_RATE, process.env.MAX_INTERVAL),
   restart = msg => {
     execSync(`${WIFI} off`)
     execSync(`${WIFI} on`)
     info(msg)
-    sleep()
+    sleep((errorInterval = exponentiate(errorInterval)))
   },
   check = () =>
     lookup(process.env.TEST_WEBSITE, err => {
       if (err && err.code == 'ENOTFOUND') {
         error(now())
-        interval = process.env.MIN_INTERVAL
+        okInterval = actualMin
 
         // fail too many times -> spoof MAC
         if (++failed == process.env.FAIL_LIMIT)
@@ -37,14 +41,9 @@ const DEVICE = `$(networksetup -listallhardwareports | awk '$3=="Wi-Fi" {getline
         else restart('wifi restarted')
       } else {
         ok(now())
-
+        errorInterval = actualMin
         failed = 0
-        interval = Math.min(
-          interval * process.env.GROWTH_RATE,
-          process.env.MAX_INTERVAL
-        )
-
-        sleep()
+        sleep((okInterval = exponentiate(okInterval)))
       }
     })
 
