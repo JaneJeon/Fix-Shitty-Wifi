@@ -1,0 +1,19 @@
+{
+  "name": "fix-shitty-internet",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Jane Jeon",
+  "license": "Apache-2.0",
+  "private": false,
+  "dependencies": {
+    "debug": "^3.1.0",
+    "dotenv": "^5.0.1"
+  },
+  "devDependencies": {
+    "prettier": "^1.12.1"
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true
+  }
+}
