@@ -23,7 +23,7 @@ const DEVICE = `$(networksetup -listallhardwareports | awk '$3=="Wi-Fi" {getline
     info(msg)
     sleep()
   },
-  check = () => {
+  check = () =>
     lookup(process.env.TEST_WEBSITE, err => {
       if (err && err.code == 'ENOTFOUND') {
         error(now())
@@ -47,7 +47,6 @@ const DEVICE = `$(networksetup -listallhardwareports | awk '$3=="Wi-Fi" {getline
         sleep()
       }
     })
-  }
 
 info(`looking up ${process.env.TEST_WEBSITE}`)
 check()
