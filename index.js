@@ -23,7 +23,7 @@ const DEVICE = `$(networksetup -listallhardwareports | awk '$3=="Wi-Fi" {getline
     gray(
       err
         .toString()
-        .trim()
+        .trimRight()
         .split('\n')
         .pop()
     ),
