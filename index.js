@@ -6,6 +6,8 @@ let failed = 0,
   okInterval = actualMin
 const DEVICE = `$(networksetup -listallhardwareports | awk '$3=="Wi-Fi" {getline; print $2}')`,
   WIFI = `networksetup -setairportpower ${DEVICE}`,
+  LID_CLOSED =
+    "ioreg -r -k AppleClamshellState -d 4 | grep AppleClamshellState | awk '{print $4}'",
   SPOOF_MAC =
     // wifi needs to be turned on to change MAC address
     `${WIFI} on && ` +
@@ -14,67 +16,77 @@ const DEVICE = `$(networksetup -listallhardwareports | awk '$3=="Wi-Fi" {getline
     `sudo ifconfig ${DEVICE} ether $(openssl rand -hex 6 | sed 's/\\(..\\)/\\1:/g; s/.$//')`,
   { lookup } = require('dns'),
   { execSync } = require('child_process'),
+  exec = command =>
+    execSync(command)
+      .toString()
+      .trimRight(),
   { bgWhite, gray, underline } = require('chalk'),
   debug = require('debug'),
   info = debug('wifi:!'),
   error = debug('wifi:✗'),
   ok = debug('wifi:✓'),
-  msg = err =>
-    gray(
-      err
-        .toString()
-        .trimRight()
-        .split('\n')
-        .pop()
+  fail = (action, err, msg) =>
+    error(
+      `${action} failed!\n\t${gray(
+        err
+          .toString()
+          .trimRight()
+          .split('\n')
+          .pop()
+      )}\n\t(${bgWhite(msg)})`
     ),
   now = () => new Date().toLocaleString() + '\t',
   sleep = interval => setTimeout(check, interval * 1000),
+  sleepError = () => sleep((errorInterval = exponentiate(errorInterval))),
   exponentiate = interval =>
     Math.min(interval * process.env.GROWTH_RATE, process.env.MAX_INTERVAL),
   restart = msg => {
     try {
-      execSync(`${WIFI} off && ${WIFI} on`)
+      exec(`${WIFI} off && ${WIFI} on`)
     } catch (err) {
-      error(
-        `Network restart failed: ${msg(err)} ${bgWhite('(Is this running on a Mac?)')}`
-      )
+      fail('Network restart', err, 'Is this running on a Mac?')
       process.exit(3)
     }
 
-    info(msg)
-    sleep((errorInterval = exponentiate(errorInterval)))
+    info(msg + '\t')
+    sleepError()
   },
   check = () =>
     lookup(process.env.TEST_SITE, err => {
       if (err) {
         if (err.code != 'ENOTFOUND') {
-          error(
-            `Lookup failed: ${msg(err)} ${bgWhite('(Is the test site set up correctly?)')}`
-          )
+          fail('Lookup', err, 'Is this test site set up correctly?')
           process.exit(2)
         }
 
         error(now())
         okInterval = actualMin
 
-        // fail too many times -> spoof MAC
-        if (++failed >= process.env.FAIL_LIMIT) {
-          let spoofErr
+        // if the lid is closed, don't do anything!
+        try {
+          if (exec(LID_CLOSED) == 'Yes') {
+            info('Lid closed. Ignoring.\t')
+            return sleepError()
+          }
+        } catch (err) {
+          fail('Determining lid state', err, 'Is this running on a Mac?')
+          process.exit(3)
+        }
 
+        // fail too many times -> spoof MAC
+        if (++failed == process.env.MAX_TRIES)
           try {
-            execSync(SPOOF_MAC)
+            exec(SPOOF_MAC)
+            restart('MAC address spoofed')
           } catch (err) {
             // this is the one error that is recoverable from, so don't exit
-            spoofErr = err
-            error(
-              `MAC address spoofing failed: ${msg(err)} ${bgWhite('(Is the Wi-Fi on?)')}`
-            )
+            fail('MAC address spoofing', err, 'Is the Wi-Fi on?')
+            sleepError()
           }
-
-          if (spoofErr) {
-            sleep((errorInterval = exponentiate(errorInterval)))
-          } else restart('MAC address spoofed\t')
-        } else restart('Network restarted\t')
+        else if (failed > process.env.MAX_TRIES)
+          // give up after max number of tries
+          sleepError()
+        else restart('Network restarted')
       } else {
         ok(now())
         errorInterval = actualMin
