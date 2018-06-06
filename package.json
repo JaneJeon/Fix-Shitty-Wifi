@@ -8,13 +8,14 @@
   "dependencies": {
     "chalk": "^2.4.1",
     "debug": "^3.1.0",
-    "dotenv": "^5.0.1"
+    "dotenv": "^5.0.1",
+    "moment-timezone": "^0.5.17",
+    "request": "^2.87.0"
   },
   "devDependencies": {
     "prettier": "^1.12.1"
   },
   "prettier": {
-    "printWidth": 91,
     "semi": false,
     "singleQuote": true
   }
