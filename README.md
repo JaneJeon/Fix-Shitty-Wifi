@@ -8,7 +8,7 @@ Fixes various troublesome wifi connections that show any of the following behavi
 `sudo node index.js` to start, `.env` for configuration.
 
 <p align='center'>
-  <img src='screenshot.png' width='70%'>
+  <img src='screenshot.png' width='65%'>
 </p>
 
 ### Why do I need the `sudo`?
