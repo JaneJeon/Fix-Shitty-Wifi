@@ -16,7 +16,7 @@ const TIMEZONE = "sudo systemsetup -gettimezone | awk '{print $3}'",
     // disconnect from any connected network first WITHOUT shutting off the Wi-Fi
     '/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -z && ' +
     `sudo ifconfig ${DEVICE} ether $(openssl rand -hex 6 | sed 's/\\(..\\)/\\1:/g; s/.$//')`,
-  request = require('request'),
+  http = require('http'),
   { execSync } = require('child_process'),
   exec = command =>
     execSync(command)
@@ -67,11 +67,18 @@ const TIMEZONE = "sudo systemsetup -gettimezone | awk '{print $3}'",
     sleepError()
   },
   check = () =>
-    request(
-      process.env.TEST_SITE,
-      { timeout: process.env.TIMEOUT * 1000 },
-      (err, res) => {
-        if (err || !res || res.statusCode != 200) {
+    http.get(
+      { hostname: process.env.TEST_SITE, timeout: process.env.TIMEOUT * 1000 },
+      res => {
+        if (res.statusCode == 200) {
+          // success
+          ok(now())
+          errorInterval = actualMin
+          failed = 0
+
+          sleep((okInterval = exponentiate(okInterval)))
+        } else {
+          // failure
           error(now())
           okInterval = actualMin
 
@@ -99,13 +106,10 @@ const TIMEZONE = "sudo systemsetup -gettimezone | awk '{print $3}'",
             // give up after max number of tries
             sleepError()
           else restart('Network restarted')
-        } else {
-          ok(now())
-          errorInterval = actualMin
-          failed = 0
-
-          sleep((okInterval = exponentiate(okInterval)))
         }
+
+        res.resume()
+        res.destroy()
       }
     )
 
