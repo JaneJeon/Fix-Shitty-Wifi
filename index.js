@@ -3,7 +3,8 @@ const actualMin = process.env.MIN_INTERVAL / process.env.GROWTH_RATE
 
 let failed = 0,
   errorInterval = actualMin,
-  okInterval = actualMin
+  okInterval = actualMin,
+  req
 
 const TIMEZONE = "sudo systemsetup -gettimezone | awk '{print $3}'",
   DEVICE = `$(networksetup -listallhardwareports | awk '$3=="Wi-Fi" {getline; print $2}')`,
@@ -66,56 +67,61 @@ const TIMEZONE = "sudo systemsetup -gettimezone | awk '{print $3}'",
     info(msg + '\t')
     sleepError()
   },
-  check = () =>
-    http.get(
-      { hostname: process.env.TEST_SITE, timeout: process.env.TIMEOUT * 1000 },
+  check = () => {
+    // the req.end() that automatically gets called at the end of http.get()
+    // is not enough - need to abort it to prevent unused memory buildup
+    if (req) req.abort()
+    // global.gc()
+
+    req = http.get(
+      {
+        hostname: process.env.TEST_SITE,
+        timeout: process.env.TIMEOUT * 1000
+      },
       res => {
-        if (res.statusCode == 200) {
-          // success
-          ok(now())
-          errorInterval = actualMin
-          failed = 0
-
-          sleep((okInterval = exponentiate(okInterval)))
-        } else {
-          // failure
-          error(now())
-          okInterval = actualMin
-
-          // if the lid is closed, don't do anything!
-          try {
-            if (exec(LID_CLOSED) == 'Yes') {
-              info('Lid closed. Ignoring\t')
-              return sleepError()
-            }
-          } catch (err) {
-            fail('Determining lid state', err, 'Is this running on a Mac?', 3)
-          }
-
-          // fail too many times -> spoof MAC
-          if (++failed == process.env.MAX_TRIES)
-            try {
-              exec(SPOOF_MAC)
-              restart('MAC address spoofed')
-            } catch (err) {
-              // this is the one error that is recoverable from, so don't exit
-              fail('MAC address spoofing', err, 'Is the Wi-Fi on?')
-              sleepError()
-            }
-          else if (failed > process.env.MAX_TRIES)
-            // give up after max number of tries
-            sleepError()
-          else restart('Network restarted')
-        }
-
+        // drain response, since the getting here automatically indicates success
         res.resume()
-        res.destroy()
+
+        ok(now())
+        errorInterval = actualMin
+        failed = 0
+        sleep((okInterval = exponentiate(okInterval)))
       }
     )
 
-if (process.getuid()) {
-  error(`Startup failed. Please try again with ${underline('root')} privileges`)
-  process.exit(1)
-}
+    req.on('error', () => {
+      // failure
+      error(now())
+      okInterval = actualMin
+
+      // if the lid is closed, don't do anything!
+      try {
+        if (exec(LID_CLOSED) == 'Yes') {
+          info('Lid closed. Ignoring\t')
+          return sleepError()
+        }
+      } catch (err) {
+        fail('Determining lid state', err, 'Is this running on a Mac?', 3)
+      }
+
+      // fail too many times -> spoof MAC
+      if (++failed == process.env.MAX_TRIES)
+        try {
+          exec(SPOOF_MAC)
+          restart('MAC address spoofed')
+        } catch (err) {
+          // this is the one error that is recoverable from, so don't exit
+          fail('MAC address spoofing', err, 'Is the Wi-Fi on?')
+          sleepError()
+        }
+      else if (failed > process.env.MAX_TRIES)
+        // give up after max number of tries
+        sleepError()
+      else restart('Network restarted')
+    })
+  }
+
+if (process.getuid())
+  fail('Startup', `${underline('root')} privilege required.`, 1)
 
 check()
