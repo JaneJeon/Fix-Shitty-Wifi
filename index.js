@@ -71,7 +71,6 @@ const TIMEZONE = "sudo systemsetup -gettimezone | awk '{print $3}'",
     // the req.end() that automatically gets called at the end of http.get()
     // is not enough - need to abort it to prevent unused memory buildup
     if (req) req.abort()
-    global.gc()
 
     req = http.get(
       {
