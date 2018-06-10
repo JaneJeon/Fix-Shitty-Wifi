@@ -5,7 +5,7 @@ Fixes various troublesome wifi connections that show any of the following behavi
 - forces you to sign in every X minutes (think airport wifi)
 
 ## Sample Usage
-`sudo node --expose-gc index.js` to start, `.env` for configuration.
+`sudo node index.js` to start, `.env` for configuration.
 
 <p align='center'>
   <img src='screenshot.png' width='65%'>

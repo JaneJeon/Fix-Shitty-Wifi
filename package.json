@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "private": false,
   "scripts": {
-    "start": "sudo node --expose-gc index.js"
+    "start": "sudo node --max_old_space_size=12 index.js"
   },
   "dependencies": {
     "chalk": "^2.4.1",
