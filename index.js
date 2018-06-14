@@ -3,8 +3,7 @@ const actualMin = process.env.MIN_INTERVAL / process.env.GROWTH_RATE
 
 let failed = 0,
   errorInterval = actualMin,
-  okInterval = actualMin,
-  req
+  okInterval = actualMin
 
 const TIMEZONE = "sudo systemsetup -gettimezone | awk '{print $3}'",
   DEVICE = `$(networksetup -listallhardwareports | awk '$3=="Wi-Fi" {getline; print $2}')`,
@@ -53,10 +52,11 @@ const TIMEZONE = "sudo systemsetup -gettimezone | awk '{print $3}'",
       fail('Fetching timezone', err, 'Is this running on a Mac?', 3)
     }
   },
-  sleep = interval => setTimeout(check, interval * 1000),
-  sleepError = () => sleep((errorInterval = exponentiate(errorInterval))),
   exponentiate = interval =>
     Math.min(interval * process.env.GROWTH_RATE, process.env.MAX_INTERVAL),
+  sleep = interval => setTimeout(check, interval * 1000),
+  sleepOk = () => sleep((okInterval = exponentiate(okInterval))),
+  sleepError = () => sleep((errorInterval = exponentiate(errorInterval))),
   restart = msg => {
     try {
       exec(`${WIFI} off && ${WIFI} on`)
@@ -67,58 +67,57 @@ const TIMEZONE = "sudo systemsetup -gettimezone | awk '{print $3}'",
     info(msg + '\t')
     sleepError()
   },
-  check = () => {
-    // the req.end() that automatically gets called at the end of http.get()
-    // is not enough - need to abort it to prevent unused memory buildup
-    if (req) req.abort()
+  connected = res => {
+    // prevent memory leak
+    res.resume()
+    res.destroy()
 
-    req = http.get(
-      {
-        hostname: process.env.TEST_SITE,
-        timeout: process.env.TIMEOUT * 1000
-      },
-      res => {
-        // drain response, since the getting here automatically indicates success
-        res.resume()
-        res.destroy()
+    ok(now())
+    errorInterval = actualMin
+    failed = 0
+    sleepOk()
+  },
+  disconnected = () => {
+    error(now())
+    okInterval = actualMin
 
-        ok(now())
-        errorInterval = actualMin
-        failed = 0
-        sleep((okInterval = exponentiate(okInterval)))
+    // if the lid is closed, don't do anything!
+    try {
+      if (exec(LID_CLOSED) == 'Yes') {
+        info('Lid closed. Ignoring\t')
+        return sleepError()
       }
-    )
+    } catch (err) {
+      fail('Determining lid state', err, 'Is this running on a Mac?', 3)
+    }
 
-    req.on('error', () => {
-      // failure
-      error(now())
-      okInterval = actualMin
-
-      // if the lid is closed, don't do anything!
+    // fail too many times -> spoof MAC
+    if (++failed == process.env.MAX_TRIES)
       try {
-        if (exec(LID_CLOSED) == 'Yes') {
-          info('Lid closed. Ignoring\t')
-          return sleepError()
-        }
+        exec(SPOOF_MAC)
+        restart('MAC address spoofed')
       } catch (err) {
-        fail('Determining lid state', err, 'Is this running on a Mac?', 3)
-      }
-
-      // fail too many times -> spoof MAC
-      if (++failed == process.env.MAX_TRIES)
-        try {
-          exec(SPOOF_MAC)
-          restart('MAC address spoofed')
-        } catch (err) {
-          // this is the one error that is recoverable from, so don't exit
-          fail('MAC address spoofing', err, 'Is the Wi-Fi on?')
-          sleepError()
-        }
-      else if (failed > process.env.MAX_TRIES)
-        // give up after max number of tries
+        // this is the one error that is recoverable from, so don't exit
+        fail('MAC address spoofing', err, 'Is the Wi-Fi on?')
         sleepError()
-      else restart('Network restarted')
-    })
+      }
+    else if (failed > process.env.MAX_TRIES)
+      // give up after max number of tries
+      sleepError()
+    else restart('Network restarted')
+  },
+  check = () => {
+    const req = http.get(process.env.TEST_SITE, connected)
+
+    req.on('error', disconnected)
+
+    setTimeout(() => {
+      // the timeout option of http.get() isn't worth a damn when it comes to
+      // connections that allow DNS resolve but don't allow any actual connection
+      if (!req.finished) disconnected()
+
+      req.abort()
+    }, process.env.TIMEOUT * 1000)
   }
 
 if (process.getuid())
