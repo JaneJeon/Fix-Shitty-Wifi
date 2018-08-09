@@ -1,4 +1,4 @@
-require('dotenv').load()
+require("dotenv").load()
 const actualMin = process.env.MIN_INTERVAL / process.env.GROWTH_RATE
 
 let failed = 0,
@@ -14,42 +14,44 @@ const TIMEZONE = "sudo systemsetup -gettimezone | awk '{print $3}'",
     // wifi needs to be turned on to change MAC address
     `${WIFI} on && ` +
     // disconnect from any connected network first WITHOUT shutting off the Wi-Fi
-    '/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -z && ' +
+    "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -z && " +
     `sudo ifconfig ${DEVICE} ether $(openssl rand -hex 6 | sed 's/\\(..\\)/\\1:/g; s/.$//')`,
-  http = require('http'),
-  { execSync } = require('child_process'),
+  http = require("http"),
+  { execSync } = require("child_process"),
   exec = command =>
     execSync(command)
       .toString()
       .trimRight(),
-  { bgWhite, gray, underline } = require('chalk'),
-  debug = require('debug'),
-  info = debug('wifi:!'),
-  error = debug('wifi:✗'),
-  ok = debug('wifi:✓'),
+  { bgWhite, gray, underline } = require("chalk"),
+  debug = require("debug"),
+  info = debug("wifi:!"),
+  error = debug("wifi:✗"),
+  ok = debug("wifi:✓"),
   fail = (action, err, msg, code) => {
     error(
       `${action} failed!\n${gray(
         err
           .toString()
           .trimRight()
-          .split('\n')
+          .split("\n")
           .pop()
-      )}\n${bgWhite(msg)}`
+      )}`
     )
+
+    if (msg) error(bgWhite(msg))
 
     if (code) process.exit(code)
   },
-  moment = require('moment-timezone'),
+  moment = require("moment-timezone"),
   now = () => {
     try {
       return (
         moment()
           .tz(exec(TIMEZONE))
-          .format('MMM Do, h:mm:ss A') + '\t'
+          .format("MMM Do, h:mm:ss A") + "\t"
       )
     } catch (err) {
-      fail('Fetching timezone', err, 'Is this running on a Mac?', 3)
+      fail("Fetching timezone", err, "Is this running on a Mac?", 3)
     }
   },
   exponentiate = interval =>
@@ -61,10 +63,10 @@ const TIMEZONE = "sudo systemsetup -gettimezone | awk '{print $3}'",
     try {
       exec(`${WIFI} off && ${WIFI} on`)
     } catch (err) {
-      fail('Network restart', err, 'Is this running on a Mac?', 3)
+      fail("Network restart", err, "Is this running on a Mac?", 3)
     }
 
-    info(msg + '\t')
+    info(msg + "\t")
     sleepError()
   },
   connected = res => {
@@ -83,33 +85,33 @@ const TIMEZONE = "sudo systemsetup -gettimezone | awk '{print $3}'",
 
     // if the lid is closed, don't do anything!
     try {
-      if (exec(LID_CLOSED) == 'Yes') {
-        info('Lid closed. Ignoring\t')
+      if (exec(LID_CLOSED) == "Yes") {
+        info("Lid closed. Ignoring\t")
         return sleepError()
       }
     } catch (err) {
-      fail('Determining lid state', err, 'Is this running on a Mac?', 3)
+      fail("Determining lid state", err, "Is this running on a Mac?", 3)
     }
 
     // fail too many times -> spoof MAC
     if (++failed == process.env.MAX_TRIES)
       try {
         exec(SPOOF_MAC)
-        restart('MAC address spoofed')
+        restart("MAC address spoofed")
       } catch (err) {
         // this is the one error that is recoverable from, so don't exit
-        fail('MAC address spoofing', err, 'Is the Wi-Fi on?')
+        fail("MAC address spoofing", err, "Is the Wi-Fi on?")
         sleepError()
       }
     else if (failed > process.env.MAX_TRIES)
       // give up after max number of tries
       sleepError()
-    else restart('Network restarted')
+    else restart("Network restarted")
   },
   check = () => {
     const req = http.get(process.env.TEST_SITE, connected)
 
-    req.on('error', disconnected)
+    req.on("error", disconnected)
 
     setTimeout(() => {
       // the timeout option of http.get() isn't worth a damn when it comes to
@@ -121,6 +123,6 @@ const TIMEZONE = "sudo systemsetup -gettimezone | awk '{print $3}'",
   }
 
 if (process.getuid())
-  fail('Startup', `${underline('root')} privilege required.`, 1)
+  fail("Startup", `${underline("root")} privilege required.`, "", 1)
 
 check()

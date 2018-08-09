@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "private": false,
   "scripts": {
-    "start": "sudo node --max_old_space_size=12 index.js"
+    "start": "sudo node_modules/.bin/pm2 start index.js --max-memory-restart 50M"
   },
   "dependencies": {
     "chalk": "^2.4.1",
@@ -15,10 +15,6 @@
     "moment-timezone": "^0.5.17"
   },
   "devDependencies": {
-    "prettier": "^1.12.1"
-  },
-  "prettier": {
-    "semi": false,
-    "singleQuote": true
+    "pm2": "^3.0.3"
   }
 }
