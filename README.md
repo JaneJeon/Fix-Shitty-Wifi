@@ -5,7 +5,7 @@ Fixes various troublesome wifi connections that show any of the following behavi
 3. forces you to sign in every X minutes (think airport wifi)
 
 ## Sample Usage
-`npm install` or `yarn` to install dependencies, then `sudo node index.js` to start, or `npm/yarn start` to prevent memory leaks; edit `.env` for configuration.
+`npm install` or `yarn` to install dependencies, then `sudo node index.js` to start. If you have `pm2` globally installed, `npm/yarn start` to prevent memory leaks. Edit `.env` for configuration.
 
 <p align='center'>
   <img src='screenshot.png' width='65%'>

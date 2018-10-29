@@ -94,7 +94,7 @@ const TIMEZONE = "sudo systemsetup -gettimezone | awk '{print $3}'",
     }
 
     // fail too many times -> spoof MAC
-    if (++failed == process.env.MAX_TRIES)
+    if (++failed == process.env.MAX_TRIES && !process.env.NO_SPOOF)
       try {
         exec(SPOOF_MAC)
         restart("MAC address spoofed")

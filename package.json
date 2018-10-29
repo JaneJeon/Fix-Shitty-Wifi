@@ -6,15 +6,12 @@
   "license": "Apache-2.0",
   "private": false,
   "scripts": {
-    "start": "sudo node_modules/.bin/pm2 start index.js --max-memory-restart 50M"
+    "start": "sudo pm2 start index.js --max-memory-restart 50M"
   },
   "dependencies": {
     "chalk": "^2.4.1",
     "debug": "^3.1.0",
     "dotenv": "^5.0.1",
     "moment-timezone": "^0.5.17"
-  },
-  "devDependencies": {
-    "pm2": "^3.0.3"
   }
 }
