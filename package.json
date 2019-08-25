@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "chalk": "^2.4.1",
-    "debug": "^3.1.0",
+    "debug": "^4.1.1",
     "dotenv": "^5.0.1",
     "moment-timezone": "^0.5.17"
   }
