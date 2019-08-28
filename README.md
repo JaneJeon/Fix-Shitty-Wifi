@@ -1,4 +1,7 @@
 # Fix Shitty Wifi (for macOS)
+
+[![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=JaneJeon/Fix-Shitty-Wifi)](https://dependabot.com)
+
 Fixes various troublesome wifi connections that show any of the following behaviour: 
 1. disconnect randomly (spotty/intermittently dropping connection)
 2. silently cuts you off from the rest of the internet even though the wifi is still connected (*cough* comcast *cough*)
