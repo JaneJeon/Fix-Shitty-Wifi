@@ -1,4 +1,4 @@
-require('dotenv').config({path:'.env'});
+require('dotenv').config({path:'.env'})
 const actualMin = process.env.MIN_INTERVAL / process.env.GROWTH_RATE
 
 let failed = 0,
