@@ -9,7 +9,7 @@
     "start": "sudo pm2 start index.js --max-memory-restart 50M"
   },
   "dependencies": {
-    "chalk": "^4.0.0",
+    "chalk": "^4.1.0",
     "debug": "^4.1.1",
     "dotenv": "^8.1.0",
     "moment-timezone": "^0.5.31"
